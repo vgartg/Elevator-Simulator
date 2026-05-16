@@ -1,66 +1,70 @@
 package main
 
 import (
-	"encoding/json"
+	"context"
+	"errors"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"path/filepath"
+	"strconv"
+	"syscall"
+	"time"
 
-	"github.com/vgartg/elevator-simulator/internal/elevator"
+	"github.com/vgartg/elevator-simulator/api"
 )
-
-var (
-	state = elevator.State{
-		Elevators: []elevator.Elevator{
-			{
-				ID:           1,
-				CurrentFloor: 1,
-				Direction:    "idle",
-				IsMoving:     false,
-				DoorsOpen:    false,
-			},
-			{
-				ID:           2,
-				CurrentFloor: 5,
-				Direction:    "idle",
-				IsMoving:     false,
-				DoorsOpen:    false,
-			},
-		},
-		Floors: 10,
-	}
-)
-
-func getStateHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(state)
-}
-
-type callRequest struct {
-	Floor int `json:"floor"`
-}
-
-func callElevatorHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	var req callRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
-
-	log.Printf("Call received on floor %d (mock, no action yet)", req.Floor)
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
-}
 
 func main() {
-	fs := http.FileServer(http.Dir("./web/static"))
-	http.Handle("/", fs)
+	port := envOrDefault("PORT", "3000")
+	floors, _ := strconv.Atoi(envOrDefault("FLOORS", "10"))
+	cabins, _ := strconv.Atoi(envOrDefault("ELEVATORS", "2"))
 
-	http.HandleFunc("/api/state", getStateHandler)
-	http.HandleFunc("/api/call", callElevatorHandler)
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	webRoot := ""
+	candidate := filepath.Join("web", "dist")
+	if info, err := os.Stat(candidate); err == nil && info.IsDir() {
+		webRoot = candidate
+	}
+
+	srv, err := api.New(api.Config{
+		Floors:    floors,
+		Elevators: cabins,
+		WebRoot:   webRoot,
+	})
+	if err != nil {
+		log.Fatalf("init server: %v", err)
+	}
+
+	httpSrv := &http.Server{
+		Addr:              ":" + port,
+		Handler:           srv.Handler(),
+		ReadHeaderTimeout: 5 * time.Second,
+	}
+
+	go func() {
+		log.Printf("elevator-simulator listening on http://localhost:%s (floors=%d, cabins=%d)", port, floors, cabins)
+		if webRoot != "" {
+			log.Printf("serving SPA from %s", webRoot)
+		}
+		if err := httpSrv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("listen: %v", err)
+		}
+	}()
+
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
+	<-stop
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := httpSrv.Shutdown(ctx); err != nil {
+		log.Printf("shutdown: %v", err)
+	}
+}
+
+func envOrDefault(key, fallback string) string {
+	if v, ok := os.LookupEnv(key); ok && v != "" {
+		return v
+	}
+	return fallback
 }

@@ -1,0 +1,27 @@
+# Go binaries
+/bin/
+/elevator-simulator
+/elevator-simulator.exe
+*.test
+*.out
+coverage.out
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Frontend
+web/node_modules/
+web/dist/
+web/.vite/
+web/coverage/
+
+# Env
+.env
+.env.local
