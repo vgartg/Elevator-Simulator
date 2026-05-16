@@ -1,9 +1,9 @@
 # Elevator Simulator
 
 [![CI](https://github.com/vgartg/elevator-simulator/actions/workflows/ci.yml/badge.svg)](https://github.com/vgartg/elevator-simulator/actions/workflows/ci.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/vgartg/elevator-simulator)](https://goreportcard.com/report/github.com/vgartg/elevator-simulator)
 [![Go](https://img.shields.io/badge/Go-1.22%2B-00ADD8?logo=go&logoColor=white)](https://go.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Vite](https://img.shields.io/badge/Vite-5-646CFF?logo=vite&logoColor=white)](https://vitejs.dev)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.txt)
 
 ---

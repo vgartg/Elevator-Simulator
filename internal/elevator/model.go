@@ -31,10 +31,10 @@ type Call struct {
 
 // Stats summarises lifetime simulator activity.
 type Stats struct {
-	Ticks        int `json:"ticks"`
-	StopsServed  int `json:"stopsServed"`
-	CallsPlaced  int `json:"callsPlaced"`
-	CallsServed  int `json:"callsServed"`
+	Ticks       int `json:"ticks"`
+	StopsServed int `json:"stopsServed"`
+	CallsPlaced int `json:"callsPlaced"`
+	CallsServed int `json:"callsServed"`
 }
 
 // HasStop reports whether the elevator already plans to stop at floor.
