@@ -43,21 +43,23 @@ store.subscribe(paint);
 void boot();
 
 async function boot(): Promise<void> {
-  const health = await tolerate(api.health);
-  store.set({ health });
+  await refreshHealth();
+  try {
+    const config = await api.config();
+    store.set({ floors: config.floors, cabins: config.elevators });
+    store.set({ snapshot: await api.state() });
+  } catch (err) {
+    reportError(err, 'Boot');
+  }
+  window.setInterval(refreshHealth, TIMING.healthPollMs);
+}
 
-  const config = await tolerate(api.config, {
-    floors: SIM.defaultFloors,
-    elevators: SIM.defaultCabins,
-  });
-  store.set({ floors: config.floors, cabins: config.elevators });
-
-  const snapshot = await tolerate(api.state, fallbackSnapshot(config.floors, config.elevators));
-  store.set({ snapshot });
-
-  window.setInterval(async () => {
-    store.set({ health: await tolerate(api.health) });
-  }, TIMING.healthPollMs);
+async function refreshHealth(): Promise<void> {
+  try {
+    store.set({ health: await api.health() });
+  } catch {
+    store.set({ health: null });
+  }
 }
 
 function paint(state: Readonly<AppState>): void {
@@ -101,8 +103,7 @@ function paint(state: Readonly<AppState>): void {
 
 async function callApi(fn: () => Promise<Snapshot>, label: string): Promise<void> {
   try {
-    const snapshot = await fn();
-    store.set({ snapshot });
+    store.set({ snapshot: await fn() });
   } catch (err) {
     reportError(err, label);
   }
@@ -116,8 +117,7 @@ function restartLoop(running: boolean, speedMs: number): void {
   if (!running) return;
   simulationTimer = window.setInterval(async () => {
     try {
-      const snapshot = await api.tick(1);
-      store.set({ snapshot });
+      store.set({ snapshot: await api.tick(1) });
     } catch (err) {
       store.set({ running: false });
       restartLoop(false, speedMs);
@@ -129,29 +129,4 @@ function restartLoop(running: boolean, speedMs: number): void {
 function reportError(err: unknown, prefix: string): void {
   const detail = err instanceof ApiError ? `${err.code}: ${err.message}` : String(err);
   toast(`${prefix} — ${detail}`, 'error');
-}
-
-async function tolerate<T>(fn: () => Promise<T>): Promise<T | null>;
-async function tolerate<T>(fn: () => Promise<T>, fallback: T): Promise<T>;
-async function tolerate<T>(fn: () => Promise<T>, fallback?: T): Promise<T | null> {
-  try {
-    return await fn();
-  } catch {
-    return fallback ?? null;
-  }
-}
-
-function fallbackSnapshot(floors: number, cabins: number): Snapshot {
-  return {
-    floors,
-    elevators: Array.from({ length: cabins }, (_, index) => ({
-      id: index + 1,
-      currentFloor: 1,
-      direction: 'idle',
-      doorsOpen: false,
-      queue: [],
-    })),
-    calls: [],
-    stats: { ticks: 0, stopsServed: 0, callsPlaced: 0, callsServed: 0 },
-  };
 }

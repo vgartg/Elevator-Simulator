@@ -1,12 +1,7 @@
 package elevator
 
-// Tick advances the simulation by one discrete step.
-//
-// Order of operations:
-//  1. Each elevator with open doors closes them
-//  2. Pending hall calls are dispatched to the most suitable elevator
-//  3. Each elevator moves one floor toward the next target in its queue,
-//     opens doors on arrival, and clears that stop
+// Tick advances the simulation by one discrete step. See the package
+// overview for the full tick contract.
 func (b *Building) Tick() {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -26,6 +21,9 @@ func (b *Building) Tick() {
 	b.Stats.Ticks++
 }
 
+// advance moves a single cabin one floor toward the head of its queue,
+// opens its doors on arrival, and re-sorts the remaining stops so the
+// cabin keeps sweeping in its travel direction.
 func (b *Building) advance(e *Elevator) {
 	if len(e.Queue) == 0 {
 		e.Direction = DirectionIdle
@@ -40,79 +38,15 @@ func (b *Building) advance(e *Elevator) {
 		e.Direction = DirectionDown
 		e.CurrentFloor--
 	}
-	if e.CurrentFloor == target {
-		e.DoorsOpen = true
-		e.Queue = e.Queue[1:]
-		b.Stats.StopsServed++
-		if len(e.Queue) == 0 {
-			e.Direction = DirectionIdle
-		} else {
-			e.sortQueue()
-		}
-	}
-}
-
-// dispatchCalls assigns each pending hall call to the cabin with the
-// lowest dispatch cost — closest in distance, with a small penalty when
-// the cabin would need to reverse direction.
-func (b *Building) dispatchCalls() {
-	if len(b.Calls) == 0 || len(b.Elevators) == 0 {
+	if e.CurrentFloor != target {
 		return
 	}
-	remaining := b.Calls[:0]
-	for _, c := range b.Calls {
-		best := -1
-		bestCost := 1 << 30
-		for i, e := range b.Elevators {
-			cost := dispatchCost(e, c, b.Floors)
-			if cost < bestCost {
-				bestCost = cost
-				best = i
-			}
-		}
-		if best == -1 {
-			remaining = append(remaining, c)
-			continue
-		}
-		e := b.Elevators[best]
-		e.AddStop(c.Floor)
-		if e.Direction == DirectionIdle {
-			if c.Floor > e.CurrentFloor {
-				e.Direction = DirectionUp
-			} else if c.Floor < e.CurrentFloor {
-				e.Direction = DirectionDown
-			} else {
-				e.Direction = c.Direction
-			}
-			e.sortQueue()
-		}
-		b.Stats.CallsServed++
+	e.DoorsOpen = true
+	e.Queue = e.Queue[1:]
+	b.Stats.StopsServed++
+	if len(e.Queue) == 0 {
+		e.Direction = DirectionIdle
+		return
 	}
-	b.Calls = remaining
-}
-
-func dispatchCost(e *Elevator, c Call, floors int) int {
-	abs := func(x int) int {
-		if x < 0 {
-			return -x
-		}
-		return x
-	}
-	distance := abs(e.CurrentFloor - c.Floor)
-	switch e.Direction {
-	case DirectionIdle:
-		return distance
-	case DirectionUp:
-		if c.Floor >= e.CurrentFloor && c.Direction == DirectionUp {
-			return distance
-		}
-		return distance + floors
-	case DirectionDown:
-		if c.Floor <= e.CurrentFloor && c.Direction == DirectionDown {
-			return distance
-		}
-		return distance + floors
-	default:
-		return distance + 2*floors
-	}
+	e.sortQueue()
 }
