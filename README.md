@@ -6,12 +6,6 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.txt)
 
----
-
-
-
----
-
 A pet project to practice tick-based simulation, HTTP API design, and small-scale frontend architecture in one repo — a multi-cabin elevator dispatcher with a Go core, a chi-powered JSON API, and a Vite + TypeScript + Tailwind SPA that draws the building floor by floor
 
 ## What it does
@@ -19,6 +13,12 @@ A pet project to practice tick-based simulation, HTTP API design, and small-scal
 The Go core models a building with up to eight cabins and twenty floors, each tick closing doors, dispatching pending hall calls by nearest-cost, then advancing each cabin one floor toward the head of its queue using a LOOK/SCAN style scheduler
 
 A thin chi router exposes the simulator over JSON so anything can drive it — `curl`, an integration test, or the bundled SPA, which streams state every tick and lets you place hall calls, pick destinations from inside a cabin, step manually, or run the simulation at four selectable speeds
+
+---
+
+<img width="1089" height="788" alt="image" src="https://github.com/user-attachments/assets/e294470b-3146-4eb6-aa0d-e6fc6cc61e77" />
+
+---
 
 ## Quickstart
 
