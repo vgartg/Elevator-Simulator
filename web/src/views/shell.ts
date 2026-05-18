@@ -18,12 +18,19 @@ export function renderShell(root: HTMLElement): ShellSlots {
     h('main', { class: 'frame flex flex-col gap-5 py-6 sm:py-10' }, [
       header,
       controls,
-      h('section', {
-        class: 'grid gap-5 lg:grid-cols-[minmax(0,1fr)_19rem]',
-        'aria-label': 'Building',
-      }, [building, cabinPanels]),
-      h('footer', { class: 'eyebrow pt-2 text-center' },
-        'go core · chi router · vite · typescript · tailwind'),
+      h(
+        'section',
+        {
+          class: 'grid gap-5 lg:grid-cols-[minmax(0,1fr)_19rem]',
+          'aria-label': 'Building',
+        },
+        [building, cabinPanels],
+      ),
+      h(
+        'footer',
+        { class: 'eyebrow pt-2 text-center' },
+        'go core · chi router · vite · typescript · tailwind',
+      ),
     ]),
   );
   return { header, controls, building, cabinPanels };

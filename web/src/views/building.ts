@@ -9,8 +9,15 @@ export interface BuildingHandlers {
   onCabinSelect(elevatorId: number, floor: number): void;
 }
 
-interface CabinNodes { shell: HTMLElement; badge: HTMLElement; }
-interface PanelNodes { panel: HTMLElement; status: HTMLElement; buttons: HTMLButtonElement[]; }
+interface CabinNodes {
+  shell: HTMLElement;
+  badge: HTMLElement;
+}
+interface PanelNodes {
+  panel: HTMLElement;
+  status: HTMLElement;
+  buttons: HTMLButtonElement[];
+}
 
 export class BuildingView {
   private floors = 0;
@@ -34,7 +41,9 @@ export class BuildingView {
   private scaffold(s: Snapshot): void {
     this.floors = s.floors;
     this.cabinCount = s.elevators.length;
-    this.cabins.clear(); this.halls.clear(); this.panels.clear();
+    this.cabins.clear();
+    this.halls.clear();
+    this.panels.clear();
 
     const rows: HTMLElement[] = [];
     for (let f = s.floors; f >= 1; f--) rows.push(this.row(f, s.floors));
@@ -50,13 +59,20 @@ export class BuildingView {
       this.shaft!.appendChild(nodes.shell);
     });
 
-    mount(this.root, h('div', {
-      class: 'schematic',
-      style: `--floors:${s.floors}`,
-    }, [
-      h('div', { class: 'building-grid', role: 'grid', 'aria-label': 'Building' }, rows),
-      this.shaft,
-    ]));
+    mount(
+      this.root,
+      h(
+        'div',
+        {
+          class: 'schematic',
+          style: `--floors:${s.floors}`,
+        },
+        [
+          h('div', { class: 'building-grid', role: 'grid', 'aria-label': 'Building' }, rows),
+          this.shaft,
+        ],
+      ),
+    );
     mount(this.panelRoot, this.allPanels(s));
   }
 
@@ -72,18 +88,27 @@ export class BuildingView {
   }
 
   private hallBtn(floor: number, dir: Hall): HTMLButtonElement {
-    const btn = h('button', {
-      type: 'button', class: 'hall-btn',
-      'aria-label': `Call ${dir} from floor ${floor}`,
-      onClick: () => this.handlers.onHallCall(floor, dir),
-    }, DIRECTION_GLYPH[dir] ?? '');
+    const btn = h(
+      'button',
+      {
+        type: 'button',
+        class: 'hall-btn',
+        'aria-label': `Call ${dir} from floor ${floor}`,
+        onClick: () => this.handlers.onHallCall(floor, dir),
+      },
+      DIRECTION_GLYPH[dir] ?? '',
+    );
     this.halls.set(`${floor}-${dir}`, btn);
     return btn;
   }
 
   private cabin(e: Elevator, i: number, total: number): CabinNodes {
     const badge = h('span', { class: 'mono text-[11px]' });
-    const shell = h('div', { class: 'cabin', style: shaftStyle(i, this.cabinCount, e.currentFloor, total) }, [badge]);
+    const shell = h(
+      'div',
+      { class: 'cabin', style: shaftStyle(i, this.cabinCount, e.currentFloor, total) },
+      [badge],
+    );
     return { shell, badge };
   }
 
@@ -100,16 +125,25 @@ export class BuildingView {
   private panel(e: Elevator, i: number, total: number): PanelNodes {
     const status = h('span', { class: 'eyebrow' });
     const buttons: HTMLButtonElement[] = [];
-    const grid = h('div', { class: 'grid grid-cols-5 gap-1.5 sm:grid-cols-6 lg:grid-cols-5' },
+    const grid = h(
+      'div',
+      { class: 'grid grid-cols-5 gap-1.5 sm:grid-cols-6 lg:grid-cols-5' },
       Array.from({ length: total }, (_, k) => {
         const floor = k + 1;
-        const btn = h('button', {
-          type: 'button', class: 'cabin-key', 'data-floor': floor,
-          onClick: () => this.handlers.onCabinSelect(e.id, floor),
-        }, String(floor));
+        const btn = h(
+          'button',
+          {
+            type: 'button',
+            class: 'cabin-key',
+            'data-floor': floor,
+            onClick: () => this.handlers.onCabinSelect(e.id, floor),
+          },
+          String(floor),
+        );
         buttons.push(btn);
         return btn;
-      }));
+      }),
+    );
     const panel = h('article', { class: 'card p-4', 'aria-label': `Cabin #${e.id}` }, [
       h('header', { class: 'mb-3 flex items-center justify-between' }, [
         h('div', { class: 'flex items-center gap-2' }, [
