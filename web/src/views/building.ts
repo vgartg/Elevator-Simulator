@@ -1,253 +1,162 @@
 import { h, mount } from '../lib/dom';
 import type { Call, Direction, Elevator, Snapshot } from '../types';
-import { cabinTheme, DIRECTION_GLYPH } from '../design';
+import { cabinDot, DIRECTION_GLYPH } from '../design';
 
-type HallDirection = Extract<Direction, 'up' | 'down'>;
+type Hall = Extract<Direction, 'up' | 'down'>;
 
 export interface BuildingHandlers {
-  onHallCall(floor: number, direction: HallDirection): void;
+  onHallCall(floor: number, direction: Hall): void;
   onCabinSelect(elevatorId: number, floor: number): void;
 }
 
-interface CabinNodes {
-  shell: HTMLElement;
-  badge: HTMLElement;
-}
-
-interface CabinPanelNodes {
-  panel: HTMLElement;
-  status: HTMLElement;
-  buttons: HTMLButtonElement[];
-}
+interface CabinNodes { shell: HTMLElement; badge: HTMLElement; }
+interface PanelNodes { panel: HTMLElement; status: HTMLElement; buttons: HTMLButtonElement[]; }
 
 export class BuildingView {
   private floors = 0;
   private cabinCount = 0;
-  private cabinNodes = new Map<number, CabinNodes>();
-  private hallButtons = new Map<string, HTMLButtonElement>();
-  private cabinPanels = new Map<number, CabinPanelNodes>();
-  private shaftLayer: HTMLElement | null = null;
+  private cabins = new Map<number, CabinNodes>();
+  private halls = new Map<string, HTMLButtonElement>();
+  private panels = new Map<number, PanelNodes>();
+  private shaft: HTMLElement | null = null;
 
   constructor(
-    private readonly buildingRoot: HTMLElement,
+    private readonly root: HTMLElement,
     private readonly panelRoot: HTMLElement,
     private readonly handlers: BuildingHandlers,
   ) {}
 
-  render(snapshot: Snapshot): void {
-    if (this.needsRescaffold(snapshot)) this.scaffold(snapshot);
-    this.update(snapshot);
+  render(s: Snapshot): void {
+    if (s.floors !== this.floors || s.elevators.length !== this.cabinCount) this.scaffold(s);
+    this.update(s);
   }
 
-  private needsRescaffold(snapshot: Snapshot): boolean {
-    return snapshot.floors !== this.floors || snapshot.elevators.length !== this.cabinCount;
-  }
+  private scaffold(s: Snapshot): void {
+    this.floors = s.floors;
+    this.cabinCount = s.elevators.length;
+    this.cabins.clear(); this.halls.clear(); this.panels.clear();
 
-  private scaffold(snapshot: Snapshot): void {
-    this.floors = snapshot.floors;
-    this.cabinCount = snapshot.elevators.length;
-    this.cabinNodes.clear();
-    this.hallButtons.clear();
-    this.cabinPanels.clear();
+    const rows: HTMLElement[] = [];
+    for (let f = s.floors; f >= 1; f--) rows.push(this.row(f, s.floors));
 
-    mount(this.buildingRoot, this.buildBuilding(snapshot));
-    mount(this.panelRoot, this.buildPanels(snapshot));
-  }
-
-  private buildBuilding(snapshot: Snapshot): HTMLElement {
-    const floorRows: HTMLElement[] = [];
-    for (let floor = snapshot.floors; floor >= 1; floor--) {
-      floorRows.push(this.buildFloorRow(floor, snapshot.floors));
-    }
-    this.shaftLayer = h('div', {
-      class:
-        'pointer-events-none absolute inset-y-2 left-[var(--label-col)] right-[var(--hall-col)] flex gap-1',
+    this.shaft = h('div', {
+      class: 'pointer-events-none absolute inset-y-2 flex gap-1',
+      style: 'left:var(--label-col);right:var(--hall-col)',
       'aria-hidden': 'true',
     });
-    snapshot.elevators.forEach((elevator, index) => {
-      const nodes = this.buildCabin(elevator, index, snapshot.floors);
-      this.cabinNodes.set(elevator.id, nodes);
-      this.shaftLayer!.appendChild(nodes.shell);
+    s.elevators.forEach((e, i) => {
+      const nodes = this.cabin(e, i, s.floors);
+      this.cabins.set(e.id, nodes);
+      this.shaft!.appendChild(nodes.shell);
     });
 
-    return h(
-      'div',
-      {
-        class: 'relative isolate overflow-hidden rounded-2xl bg-ink-900/50 ring-1 ring-white/5',
-        style: `--floors:${snapshot.floors}`,
-      },
-      [
-        h('div', { class: 'building-grid', role: 'grid', 'aria-label': 'Building' }, floorRows),
-        this.shaftLayer,
-      ],
-    );
+    mount(this.root, h('div', {
+      class: 'schematic',
+      style: `--floors:${s.floors}`,
+    }, [
+      h('div', { class: 'building-grid', role: 'grid', 'aria-label': 'Building' }, rows),
+      this.shaft,
+    ]));
+    mount(this.panelRoot, this.allPanels(s));
   }
 
-  private buildFloorRow(floor: number, totalFloors: number): HTMLElement {
-    const label = h(
-      'div',
-      {
-        class: 'flex items-center justify-center mono text-[11px] text-slate-400',
-        role: 'rowheader',
-      },
-      `F${floor.toString().padStart(2, '0')}`,
-    );
-    const shaftBg = h('div', { class: 'border-t border-white/5', role: 'gridcell' });
-    const hallBox = h(
-      'div',
-      { class: 'flex items-center justify-end gap-1 px-2', role: 'gridcell' },
-      [
-        floor < totalFloors ? this.makeHallButton(floor, 'up') : null,
-        floor > 1 ? this.makeHallButton(floor, 'down') : null,
-      ],
-    );
-    return h('div', { class: 'building-row', role: 'row' }, [label, shaftBg, hallBox]);
+  private row(floor: number, total: number): HTMLElement {
+    return h('div', { class: 'building-row', role: 'row' }, [
+      h('div', { class: 'floor-label', role: 'rowheader' }, `F${String(floor).padStart(2, '0')}`),
+      h('div', { class: 'floor-cell', role: 'gridcell' }),
+      h('div', { class: 'hall-cell floor-cell', role: 'gridcell' }, [
+        floor < total ? this.hallBtn(floor, 'up') : null,
+        floor > 1 ? this.hallBtn(floor, 'down') : null,
+      ]),
+    ]);
   }
 
-  private makeHallButton(floor: number, direction: HallDirection): HTMLButtonElement {
-    const btn = h(
-      'button',
-      {
-        type: 'button',
-        class: 'hall-btn',
-        'aria-label': `Call ${direction} from floor ${floor}`,
-        onClick: () => this.handlers.onHallCall(floor, direction),
-      },
-      DIRECTION_GLYPH[direction] ?? '',
-    );
-    this.hallButtons.set(hallKey(floor, direction), btn);
+  private hallBtn(floor: number, dir: Hall): HTMLButtonElement {
+    const btn = h('button', {
+      type: 'button', class: 'hall-btn',
+      'aria-label': `Call ${dir} from floor ${floor}`,
+      onClick: () => this.handlers.onHallCall(floor, dir),
+    }, DIRECTION_GLYPH[dir] ?? '');
+    this.halls.set(`${floor}-${dir}`, btn);
     return btn;
   }
 
-  private buildCabin(elevator: Elevator, index: number, totalFloors: number): CabinNodes {
-    const theme = cabinTheme(index);
-    const badge = h('span', { class: 'mono text-[11px] font-semibold' });
-    const shell = h(
-      'div',
-      {
-        class: `cabin ${theme.body}`,
-        style: shaftStyle(index, this.cabinCount, elevator.currentFloor, totalFloors),
-      },
-      [badge],
-    );
+  private cabin(e: Elevator, i: number, total: number): CabinNodes {
+    const badge = h('span', { class: 'mono text-[11px]' });
+    const shell = h('div', { class: 'cabin', style: shaftStyle(i, this.cabinCount, e.currentFloor, total) }, [badge]);
     return { shell, badge };
   }
 
-  private buildPanels(snapshot: Snapshot): HTMLElement {
-    const grid = h('div', { class: 'grid gap-3 sm:grid-cols-2 xl:grid-cols-1' });
-    snapshot.elevators.forEach((elevator, index) => {
-      const panel = this.buildCabinPanel(elevator, index, snapshot.floors);
-      this.cabinPanels.set(elevator.id, panel);
-      grid.appendChild(panel.panel);
+  private allPanels(s: Snapshot): HTMLElement {
+    const grid = h('div', { class: 'grid gap-3 sm:grid-cols-2 lg:grid-cols-1' });
+    s.elevators.forEach((e, i) => {
+      const p = this.panel(e, i, s.floors);
+      this.panels.set(e.id, p);
+      grid.appendChild(p.panel);
     });
     return grid;
   }
 
-  private buildCabinPanel(elevator: Elevator, index: number, totalFloors: number): CabinPanelNodes {
-    const theme = cabinTheme(index);
-    const status = h('span', { class: 'mono text-xs text-slate-300' });
+  private panel(e: Elevator, i: number, total: number): PanelNodes {
+    const status = h('span', { class: 'eyebrow' });
     const buttons: HTMLButtonElement[] = [];
-
-    const grid = h(
-      'div',
-      { class: 'grid grid-cols-5 gap-1.5 sm:grid-cols-6 lg:grid-cols-5' },
-      Array.from({ length: totalFloors }, (_, i) => {
-        const floor = i + 1;
-        const btn = h(
-          'button',
-          {
-            type: 'button',
-            class: 'cabin-key',
-            'data-floor': floor,
-            onClick: () => this.handlers.onCabinSelect(elevator.id, floor),
-          },
-          String(floor),
-        );
+    const grid = h('div', { class: 'grid grid-cols-5 gap-1.5 sm:grid-cols-6 lg:grid-cols-5' },
+      Array.from({ length: total }, (_, k) => {
+        const floor = k + 1;
+        const btn = h('button', {
+          type: 'button', class: 'cabin-key', 'data-floor': floor,
+          onClick: () => this.handlers.onCabinSelect(e.id, floor),
+        }, String(floor));
         buttons.push(btn);
         return btn;
-      }),
-    );
-
-    const panel = h('article', { class: 'card p-4', 'aria-label': `Cabin #${elevator.id}` }, [
+      }));
+    const panel = h('article', { class: 'card p-4', 'aria-label': `Cabin #${e.id}` }, [
       h('header', { class: 'mb-3 flex items-center justify-between' }, [
         h('div', { class: 'flex items-center gap-2' }, [
-          h('span', { class: `inline-block h-2.5 w-2.5 rounded-full ${theme.dot}` }),
-          h('span', { class: 'text-sm font-semibold text-slate-100' }, `Cabin #${elevator.id}`),
+          h('span', {
+            class: 'inline-block h-2.5 w-2.5 rounded-full',
+            style: `background:${cabinDot(i)}`,
+          }),
+          h('span', { class: 'text-sm font-semibold' }, `Cabin #${e.id}`),
         ]),
         status,
       ]),
       grid,
     ]);
-
     return { panel, status, buttons };
   }
 
-  private update(snapshot: Snapshot): void {
-    this.updateCabins(snapshot);
-    this.updateHallButtons(snapshot.calls);
-    this.updateCabinPanels(snapshot);
-  }
-
-  private updateCabins(snapshot: Snapshot): void {
-    snapshot.elevators.forEach((elevator, index) => {
-      const nodes = this.cabinNodes.get(elevator.id);
-      if (!nodes) return;
-      nodes.shell.style.cssText = shaftStyle(
-        index,
-        snapshot.elevators.length,
-        elevator.currentFloor,
-        snapshot.floors,
-      );
-      nodes.shell.classList.toggle('cabin-open', elevator.doorsOpen);
-      nodes.shell.classList.toggle(
-        'cabin-moving',
-        elevator.direction !== 'idle' && !elevator.doorsOpen,
-      );
-      nodes.badge.textContent = `#${elevator.id} ${DIRECTION_GLYPH[elevator.direction] ?? ''}`;
+  private update(s: Snapshot): void {
+    s.elevators.forEach((e, i) => {
+      const n = this.cabins.get(e.id);
+      if (n) {
+        n.shell.style.cssText = shaftStyle(i, s.elevators.length, e.currentFloor, s.floors);
+        n.shell.classList.toggle('cabin-open', e.doorsOpen);
+        n.shell.classList.toggle('cabin-moving', e.direction !== 'idle' && !e.doorsOpen);
+        n.badge.textContent = `#${e.id} ${DIRECTION_GLYPH[e.direction] ?? ''}`;
+      }
     });
-  }
-
-  private updateHallButtons(calls: Call[]): void {
-    const pending = new Set(calls.map((c) => hallKey(c.floor, c.direction as HallDirection)));
-    for (const [key, btn] of this.hallButtons) {
-      btn.classList.toggle('hall-btn-pending', pending.has(key));
-    }
-  }
-
-  private updateCabinPanels(snapshot: Snapshot): void {
-    snapshot.elevators.forEach((elevator) => {
-      const panel = this.cabinPanels.get(elevator.id);
-      if (!panel) return;
-      const door = elevator.doorsOpen ? ' · doors open' : '';
-      panel.status.textContent = `F${elevator.currentFloor} · ${elevator.direction}${door}`;
-      const queued = new Set(elevator.queue);
-      panel.buttons.forEach((btn) => {
-        const floor = Number(btn.dataset.floor);
-        const here = floor === elevator.currentFloor;
+    const pending = new Set(s.calls.map((c: Call) => `${c.floor}-${c.direction}`));
+    for (const [k, btn] of this.halls) btn.classList.toggle('hall-btn-pending', pending.has(k));
+    s.elevators.forEach((e) => {
+      const p = this.panels.get(e.id);
+      if (!p) return;
+      const door = e.doorsOpen ? ' · doors open' : '';
+      p.status.textContent = `f${e.currentFloor} · ${e.direction}${door}`;
+      const queued = new Set(e.queue);
+      p.buttons.forEach((btn) => {
+        const f = Number(btn.dataset.floor);
+        const here = f === e.currentFloor;
         btn.classList.toggle('cabin-key-here', here);
-        btn.classList.toggle('cabin-key-queued', !here && queued.has(floor));
+        btn.classList.toggle('cabin-key-queued', !here && queued.has(f));
         btn.disabled = here;
       });
     });
   }
 }
 
-function hallKey(floor: number, direction: HallDirection): string {
-  return `${floor}-${direction}`;
-}
-
-function shaftStyle(
-  index: number,
-  total: number,
-  currentFloor: number,
-  totalFloors: number,
-): string {
-  const widthPct = 100 / total;
-  const bottomPct = ((currentFloor - 1) / totalFloors) * 100;
-  return [
-    `left:calc(${index} * ${widthPct}% + 2px)`,
-    `width:calc(${widthPct}% - 4px)`,
-    `bottom:calc(${bottomPct}% + 2px)`,
-    `height:calc(100% / var(--floors) - 4px)`,
-  ].join(';');
+function shaftStyle(i: number, total: number, floor: number, totalFloors: number): string {
+  const w = 100 / total;
+  const b = ((floor - 1) / totalFloors) * 100;
+  return `left:calc(${i} * ${w}% + 2px);width:calc(${w}% - 4px);bottom:calc(${b}% + 2px);height:calc(100% / var(--floors) - 4px)`;
 }

@@ -12,26 +12,9 @@ export const SIM = {
   ],
 } as const;
 
-export const TIMING = {
-  healthPollMs: 5000,
-  toastVisibleMs: 2400,
-} as const;
+export const TIMING = { healthPollMs: 5000, toastVisibleMs: 2400 } as const;
 
-const CABIN_PALETTE = [
-  { dot: 'bg-gopher-500', body: 'bg-gopher-500 text-ink-900' },
-  { dot: 'bg-amber-400', body: 'bg-amber-400 text-ink-900' },
-  { dot: 'bg-emerald-400', body: 'bg-emerald-400 text-ink-900' },
-  { dot: 'bg-fuchsia-400', body: 'bg-fuchsia-400 text-ink-900' },
-  { dot: 'bg-sky-400', body: 'bg-sky-400 text-ink-900' },
-  { dot: 'bg-rose-400', body: 'bg-rose-400 text-ink-900' },
-] as const;
+const CABIN_DOTS = ['#00ADD8', '#C97921', '#2E8B57', '#7B3F99', '#3E63DD', '#BB3939'] as const;
+export const cabinDot = (i: number): string => CABIN_DOTS[i % CABIN_DOTS.length]!;
 
-export function cabinTheme(index: number): (typeof CABIN_PALETTE)[number] {
-  return CABIN_PALETTE[index % CABIN_PALETTE.length] as (typeof CABIN_PALETTE)[number];
-}
-
-export const DIRECTION_GLYPH: Record<string, string> = {
-  up: '▲',
-  down: '▼',
-  idle: '·',
-};
+export const DIRECTION_GLYPH: Record<string, string> = { up: '▲', down: '▼', idle: '·' };
