@@ -36,8 +36,7 @@ export function renderControls(
       ]),
       geometry(state, handlers),
     ]),
-    geometry(state, handlers),
-  ]));
+  );
 }
 
 function stats(s: Snapshot): HTMLElement {
@@ -126,7 +125,12 @@ function field(label: string, input: HTMLInputElement): HTMLElement {
 
 function numInput(name: string, value: number, min: number, max: number): HTMLInputElement {
   return h('input', {
-    type: 'number', name, min: String(min), max: String(max), value: String(value),
-    inputmode: 'numeric', class: 'input w-20',
+    type: 'number',
+    name,
+    min: String(min),
+    max: String(max),
+    value: String(value),
+    inputmode: 'numeric',
+    class: 'input w-20',
   });
 }

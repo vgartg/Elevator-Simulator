@@ -41,7 +41,6 @@
     background: theme('colors.gopher.500');
     color: theme('colors.paper.50');
   }
-  ::selection { background: theme('colors.gopher.500'); color: theme('colors.paper.50'); }
 }
 
 @layer components {
@@ -67,7 +66,6 @@
   .btn:hover:not(:disabled) {
     border-color: theme('colors.ink.900');
   }
-  .btn:hover:not(:disabled) { border-color: theme('colors.ink.900'); }
 
   .btn-primary {
     background: theme('colors.ink.900');
@@ -79,7 +77,6 @@
     border-color: theme('colors.gopher.500');
     color: theme('colors.ink.900');
   }
-  .btn-primary:hover:not(:disabled) { background: theme('colors.gopher.500'); border-color: theme('colors.gopher.500'); color: theme('colors.ink.900'); }
 
   .btn-danger {
     background: theme('colors.amber.500');
@@ -90,7 +87,6 @@
     background: theme('colors.amber.600');
     border-color: theme('colors.amber.600');
   }
-  .btn-danger:hover:not(:disabled) { background: theme('colors.amber.600'); border-color: theme('colors.amber.600'); }
 
   .btn-segment {
     @apply inline-flex min-w-[2.5rem] items-center justify-center px-2.5 py-1 text-xs font-medium
@@ -113,10 +109,6 @@
     background: theme('colors.ink.900');
     color: theme('colors.paper.50');
   }
-  .btn-segment:last-child { border-right: 0; }
-  .btn-segment:hover { color: theme('colors.ink.900'); background: rgba(229, 221, 196, 0.6); }
-  .btn-segment-active { color: theme('colors.paper.50'); background: theme('colors.ink.900'); }
-  .btn-segment-active:hover { background: theme('colors.ink.900'); color: theme('colors.paper.50'); }
 
   .input {
     @apply rounded-md px-2.5 py-1.5 text-sm tabular-nums;
@@ -129,25 +121,9 @@
     border-color: theme('colors.ink.900');
     box-shadow: 0 0 0 3px rgba(0, 173, 216, 0.18);
   }
-  .input:focus { outline: none; border-color: theme('colors.ink.900'); box-shadow: 0 0 0 3px rgba(0, 173, 216, 0.18); }
 
-  .mono { @apply font-mono tabular-nums; }
-  .eyebrow { @apply mono text-[0.66rem] uppercase tracking-[0.18em] text-ink-500; }
-
-  .pill {
-    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[0.7rem] font-medium;
-    border: 1px solid var(--rule);
-    background: theme('colors.paper.50');
-  }
-  .pill .dot { @apply inline-block h-1.5 w-1.5 rounded-full bg-current; }
-
-  /* — Building schematic — */
-  .schematic {
-    @apply relative isolate overflow-hidden rounded-lg;
-    background:
-      repeating-linear-gradient(90deg, transparent 0 calc(50% - 0.5px), rgba(14, 27, 44, 0.04) calc(50% - 0.5px) calc(50% + 0.5px), transparent calc(50% + 0.5px) 100%),
-      theme('colors.paper.50');
-    border: 1px solid var(--rule);
+  .mono {
+    @apply font-mono tabular-nums;
   }
   .eyebrow {
     @apply mono text-[0.66rem] uppercase tracking-[0.18em] text-ink-500;
@@ -282,11 +258,14 @@
   .stat dd {
     @apply mono text-sm font-semibold text-ink-900;
   }
-  .stat dt { @apply eyebrow; }
-  .stat dd { @apply mono text-sm font-semibold text-ink-900; }
 }
 
 @keyframes pulse-soft {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.55; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
 }
