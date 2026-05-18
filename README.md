@@ -1,5 +1,3 @@
-# Elevator Simulator
-
 [![CI](https://github.com/vgartg/elevator-simulator/actions/workflows/ci.yml/badge.svg)](https://github.com/vgartg/elevator-simulator/actions/workflows/ci.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/vgartg/elevator-simulator)](https://goreportcard.com/report/github.com/vgartg/elevator-simulator)
 [![Go](https://img.shields.io/badge/Go-1.22%2B-00ADD8?logo=go&logoColor=white)](https://go.dev)
@@ -16,7 +14,7 @@ A thin chi router exposes the simulator over JSON so anything can drive it — `
 
 ---
 
-<img width="1089" height="788" alt="image" src="https://github.com/user-attachments/assets/e294470b-3146-4eb6-aa0d-e6fc6cc61e77" />
+<img width="1068" height="798" alt="image" src="https://github.com/user-attachments/assets/b4603f35-1eb4-4b8c-986e-7db499ed6686" />
 
 ---
 
