@@ -1,12 +1,12 @@
 [![CI](https://github.com/vgartg/elevator-simulator/actions/workflows/ci.yml/badge.svg)](https://github.com/vgartg/elevator-simulator/actions/workflows/ci.yml)
 [![Deploy](https://github.com/vgartg/elevator-simulator/actions/workflows/deploy.yml/badge.svg)](https://github.com/vgartg/elevator-simulator/actions/workflows/deploy.yml)
-[![Live Demo](https://img.shields.io/badge/demo-live-22C55E?logo=githubpages&logoColor=white)](https://vgartg.github.io/elevator-simulator/)
+[![Live Demo](https://img.shields.io/badge/demo-live-22C55E?logo=githubpages&logoColor=white)](https://vgartg.github.io/Elevator-Simulator/)
 [![Go Report Card](https://goreportcard.com/badge/github.com/vgartg/elevator-simulator)](https://goreportcard.com/report/github.com/vgartg/elevator-simulator)
 [![Go](https://img.shields.io/badge/Go-1.22%2B-00ADD8?logo=go&logoColor=white)](https://go.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.txt)
 
-**Live demo:** <https://vgartg.github.io/elevator-simulator/> — the Pages build bundles a client-side port of the simulator, so the SPA runs entirely in your browser without the Go backend
+**Live demo:** <https://vgartg.github.io/Elevator-Simulator> — the Pages build bundles a client-side port of the simulator, so the SPA runs entirely in your browser without the Go backend
 
 A pet project to practice tick-based simulation, HTTP API design, and small-scale frontend architecture in one repo — a multi-cabin elevator dispatcher with a Go core, a chi-powered JSON API, and a Vite + TypeScript + Tailwind SPA that draws the building floor by floor
 
