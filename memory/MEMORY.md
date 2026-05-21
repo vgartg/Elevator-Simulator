@@ -1,1 +1,0 @@
-- [Frontend style preferences](feedback_frontend_style.md) — no AI-looking class soup, magic numbers go in design tokens

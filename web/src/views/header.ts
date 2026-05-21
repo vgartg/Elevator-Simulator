@@ -28,8 +28,14 @@ export function renderHeader(root: HTMLElement, health: Health | null): void {
           role: 'status',
           style: ok ? 'color:#2E8B57' : 'color:#BB3939',
         },
-        [h('span', { class: 'dot' }), ok ? `API ok · v${health.version}` : 'API offline'],
+        [h('span', { class: 'dot' }), ok ? statusLabel(health) : 'API offline'],
       ),
     ]),
   );
+}
+
+function statusLabel(health: Health): string {
+  return health.status === 'demo'
+    ? 'static demo · runs in your browser'
+    : `API ok · v${health.version}`;
 }

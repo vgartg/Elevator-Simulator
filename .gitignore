@@ -25,3 +25,6 @@ web/coverage/
 # Env
 .env
 .env.local
+
+# Local notes
+memory/
